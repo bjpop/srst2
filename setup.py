@@ -10,7 +10,7 @@ setup(
     packages=['srst2'],
     scripts=['scripts/getmlst.py', 'scripts/scores_vs_expected.py', 'scripts/slurm_srst2.py'],
     entry_points={
-        'console_scripts': ['srst2 = srst2.srst2:main']
+        'console_scripts': ['srst2 = srst2.srst2:main', 'srst2_gui = srst2.srst2_gui:main']
     },
     package_dir = {'srst2': 'scripts'},
     package_data={'srst2': ['data/resistance.*']},

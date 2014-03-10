@@ -1295,9 +1295,7 @@ def compile_results(args,mlst_results,db_results,compiled_output_file):
 	
 	return True
 	
-
-def main():
-	args = parse_args()
+def main_args(args):
 	if args.log is True:
 		logfile = args.output + ".log"
 	else:
@@ -1390,6 +1388,8 @@ def main():
 	
 	logging.info('SRST2 has finished.')
 
+def main():
+    main_args(parse_args())
 
 if __name__ == '__main__':
 	main()
