@@ -48,10 +48,11 @@ def get_one_file(value):
         result = value.strip()
     return result
 
+
 def get_filenames_tuple(value):
     result = None
     if isinstance(value, str) and len(value.strip()) > 0:
-        result = tuple(value.strip())
+        result = value.strip()
     elif isinstance(value, tuple):
         result = value 
     return result
@@ -71,12 +72,14 @@ class Gui(Tk):
     # XXX should common these together
 
     def ask_single_end(self):
-        filename = tkFileDialog.askopenfilenames()
-        self.single_end_variable.set(filename)
+        result = tkFileDialog.askopenfilenames()
+        self.single_end_variable_val = result 
+        self.single_end_variable_str.set(result)
 
     def ask_paired_end(self):
-        filename = tkFileDialog.askopenfilenames()
-        self.paired_end_variable.set(filename)
+        result = tkFileDialog.askopenfilenames()
+        self.paired_end_variable_val = result 
+        self.paired_end_variable_str.set(result)
 
     def ask_mlst_db(self):
         filename = tkFileDialog.askopenfilename()
@@ -87,20 +90,22 @@ class Gui(Tk):
         self.mlst_defs_variable.set(filename)
 
     def ask_gene_db(self):
-        filename = tkFileDialog.askopenfilenames()
-        self.gene_db_variable.set(filename)
+        result = tkFileDialog.askopenfilenames()
+        self.gene_db_variable_val = result
+        self.gene_db_variable_str.set(result)
 
     def ask_previous_outputs(self):
-        filename = tkFileDialog.askopenfilenames()
-        self.previous_outputs_variable.set(filename)
+        result = tkFileDialog.askopenfilenames()
+        self.previous_outputs_variable_val = result
+        self.previous_outputs_variable_str.set(result)
 
     def run(self):
         self.run_button['state'] = DISABLED
         args = Namespace()
 
         # XXX is it okay if both of these are set?
-        args.input_se = get_filenames_tuple(self.single_end_variable.get())
-        args.input_pe = get_filenames_tuple(self.paired_end_variable.get())
+        args.input_se = get_filenames_tuple(self.single_end_variable_val)
+        args.input_pe = get_filenames_tuple(self.paired_end_variable_val)
 
         args.forward = get_default(self.forward_variable.get(), DEFAULT_FORWARD) 
         args.reverse = get_default(self.reverse_variable.get(), DEFAULT_REVERSE) 
@@ -108,11 +113,12 @@ class Gui(Tk):
         read_type_map = {'fastq':'q', 'solexa':'qseq', 'fasta':'f'}
         args.read_type = read_type_map[self.read_type_variable.get()]
 
-        args.mlst_db = get_one_file(self.mlst_db_variable.get())
+        # XXX SRST2 expects the mlst_db to be a sequence even though there is only one of them
+        args.mlst_db = [get_one_file(self.mlst_db_variable.get())]
         args.mlst_definitions = get_one_file(self.mlst_defs_variable.get())
         args.mlst_delimiter = get_default(self.mlst_delimiter_variable.get(), DEFAULT_MLST_DELIMITER)
 
-        args.gene_db = get_filenames_tuple(self.gene_db_variable.get())
+        args.gene_db = get_filenames_tuple(self.gene_db_variable_val)
         args.no_gene_details = bool(self.no_gene_details_variable.get())
 
         args.min_coverage = get_default(self.min_coverage_variable.get(), DEFAULT_MIN_COVERAGE)
@@ -133,7 +139,9 @@ class Gui(Tk):
 
         args.use_existing_pileup = bool(self.use_existing_pileup_variable.get()) 
         args.use_existing_scores = bool(self.use_existing_scores_variable.get())
-        args.prev_output = get_filenames_tuple(self.previous_outputs_variable.get())
+        args.prev_output = get_filenames_tuple(self.previous_outputs_variable_val)
+
+        #print(args)
  
         main_args(args)
         self.run_button['state'] = NORMAL 
@@ -164,14 +172,16 @@ class Gui(Tk):
         row = 0
 
         Label(inputs_frame, text="Single End:").grid(row=row, column=0, sticky=W)
-        self.single_end_variable = StringVar(self) 
-        Entry(inputs_frame, textvariable=self.single_end_variable, width=FILE_ENTRY_WIDTH).grid(row=row, column=1) 
+        self.single_end_variable_str = StringVar(self) 
+        self.single_end_variable_val = None
+        Entry(inputs_frame, textvariable=self.single_end_variable_str, width=FILE_ENTRY_WIDTH).grid(row=row, column=1) 
         Button(inputs_frame, text='Choose Files', command=self.ask_single_end).grid(row=row, column=2)
         row += 1
 
         Label(inputs_frame, text="Paried End:").grid(row=row, column=0, sticky=W)
-        self.paired_end_variable = StringVar(self) 
-        Entry(inputs_frame, textvariable=self.paired_end_variable, width=FILE_ENTRY_WIDTH).grid(row=row, column=1) 
+        self.paired_end_variable_str = StringVar(self) 
+        self.paired_end_variable_val = None
+        Entry(inputs_frame, textvariable=self.paired_end_variable_str, width=FILE_ENTRY_WIDTH).grid(row=row, column=1) 
         Button(inputs_frame, text='Choose Files', command=self.ask_paired_end).grid(row=row, column=2)
         row += 1
 
@@ -220,8 +230,9 @@ class Gui(Tk):
         row = 0
 
         Label(gene_frame, text="Database:").grid(row=row, column=0, sticky=W)
-        self.gene_db_variable = StringVar(self) 
-        Entry(gene_frame, textvariable=self.gene_db_variable, width=FILE_ENTRY_WIDTH).grid(row=row, column=1) 
+        self.gene_db_variable_str = StringVar(self) 
+        self.gene_db_variable_val = None
+        Entry(gene_frame, textvariable=self.gene_db_variable_str, width=FILE_ENTRY_WIDTH).grid(row=row, column=1) 
         Button(gene_frame, text='Choose Files', command=self.ask_gene_db).grid(row=row, column=2)
         row += 1
 
@@ -237,8 +248,9 @@ class Gui(Tk):
         row = 0
 
         Label(previous_outputs_frame, text="Files:").grid(row=row, column=0, sticky=W)
-        self.previous_outputs_variable = StringVar(self) 
-        Entry(previous_outputs_frame, textvariable=self.previous_outputs_variable, width=FILE_ENTRY_WIDTH).grid(row=row, column=1) 
+        self.previous_outputs_variable_str = StringVar(self) 
+        self.previous_outputs_variable_val = None
+        Entry(previous_outputs_frame, textvariable=self.previous_outputs_variable_str, width=FILE_ENTRY_WIDTH).grid(row=row, column=1) 
         Button(previous_outputs_frame, text='Choose Files', command=self.ask_previous_outputs).grid(row=row, column=2)
         row += 1
 
