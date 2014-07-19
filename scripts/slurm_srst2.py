@@ -3,6 +3,7 @@ import string, re, collections
 import os, sys, subprocess		
 from subprocess import call, check_output, CalledProcessError, STDOUT
 from argparse import (ArgumentParser, FileType)
+from srst2.utils import (run_command, check_bowtie_version, check_samtools_version, CommandError)
 
 def parse_args():
 	"Parse the input arguments, use '-h' for help"
@@ -124,50 +125,11 @@ def read_file_sets(args):
 		print 'Total single reads found:' + str(num_single_readsets)
 
 	return fileSets
-	
-class CommandError(Exception):
-	pass
-	
-def run_command(command, **kwargs):
-	'Execute a shell command and check the exit status and any O/S exceptions'
-	command_str = ' '.join(command)
-	print 'Running: {}'.format(command_str)
-	try:
-		exit_status = call(command, **kwargs)
-	except OSError as e:
-		message = "Command '{}' failed due to O/S error: {}".format(command_str, str(e))
-		raise CommandError({"message": message})
-	if exit_status != 0:
-		message = "Command '{}' failed with non-zero exit status: {}".format(command_str, exit_status)
-		raise CommandError({"message": message})
-
-def check_command_version(command_list, version_identifier, command_name, required_version):
-	try:
-		command_stdout = check_output(command_list, stderr=STDOUT)
-	except OSError as e:
-		print "Failed command: {}".format(' '.join(command_list))
-		print str(e)
-		print "Could not determine the version of {}.".format(command_name)
-		print "Do you have {} installed in your PATH?".format(command_name)
-		exit(-1)
-	except CalledProcessError as e:
-		# some programs such as samtools return a non-zero exit status
-		# when you ask for the version (sigh). We ignore it here.
-		command_stdout = e.output
-
-	if version_identifier not in command_stdout:
-		print "Incorrect version of {} installed.".format(command_name)
-		print "{} version {} is required by SRST2.".format(command_name, required_version)
-		exit(-1)
 
 def bowtie_index(fasta_files):
 	'Build a bowtie2 index from the given input fasta(s)'
 
-	# check that both bowtie has the right versions
-	check_command_version(['bowtie2', '--version'],
-				'bowtie2-align version 2.1.0',
-				'bowtie',
-				'2.1.0')
+	check_bowtie_version()
 
 	for fasta in fasta_files:
 		built_index = fasta + '.1.bt2'
@@ -180,11 +142,8 @@ def bowtie_index(fasta_files):
 def samtools_index(fasta_files):
 	'Build a samtools faidx index from the given input fasta(s)'
 
-	# check that both samtools has the right versions
-	check_command_version(['samtools'],
-				'Version: 0.1.18',
-				'samtools',
-				'0.1.18')
+	# check that both samtools has the right version
+	check_samtools_version()
 
 	for fasta in fasta_files:
 		built_index = fasta + '.fai'
